@@ -25,13 +25,14 @@ func init() {
 func serverFun(cmd *cobra.Command, args []string) {
 	if create == true {
 		createBlockChain(address)
+	} else {
+		printBlockChain(address)
 	}
-
-	printBlockChain(address)
 }
 
 func createBlockChain(address string) {
 	chain := blockchain.InitBlockChain(address)
+	chain.PrintChain()
 	defer chain.Database.Close()
 }
 
