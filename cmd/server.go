@@ -6,7 +6,6 @@ import (
 )
 
 var create bool
-var address string
 
 var serverCmd = &cobra.Command{
 	Use:   "server",

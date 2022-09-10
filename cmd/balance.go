@@ -14,7 +14,7 @@ var balanceCmd = &cobra.Command{
 	Short: "Command to get balance.",
 	Long: `Command to get balance.
 For example:
-coin balance --address "Xonxi"
+coin balance --address "15AfJY1BtvMsD5Zzd7mtBLyaxQavTESxaa"
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		getBalance()
@@ -23,8 +23,6 @@ coin balance --address "Xonxi"
 
 func init() {
 	rootCmd.AddCommand(balanceCmd)
-
-	balanceCmd.Flags().StringVarP((&address), "address", "a", "Xonxi", "Create new blockchain")
 }
 
 func getBalance() {
@@ -32,7 +30,7 @@ func getBalance() {
 	defer chain.Database.Close()
 
 	balance := 0
-	UTXOs := chain.FindUTXO(address)
+	UTXOs := chain.FindUTXO([]byte(address))
 
 	for _, out := range UTXOs {
 		balance += out.Value

@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var address string
+
 var rootCmd = &cobra.Command{
 	Use:   "coin",
 	Short: "Command Interface for coin network communication.",
@@ -20,5 +22,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().StringVarP((&address), "address", "a", "15AfJY1BtvMsD5Zzd7mtBLyaxQavTESxaa", "Addres of blockchain")
 }
