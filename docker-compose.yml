@@ -1,0 +1,27 @@
+version: '3.9'
+services:
+  machine-1:
+    build: .
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./tmp:/app/tmp
+    environment:
+      - NODE_ID=3000
+      - MINE_ADDRESS=1PprhXRdQQB5LjY5FNTNjkRbuxwc1E3Fh
+
+  machine-2:
+    build: .
+    ports:
+      - '5000:5000'
+    volumes:
+      - ./tmp:/app/tmp
+    environment:
+      - NODE_ID=5000
+      - MINE_ADDRESS=1GAiXWkPjWqCw2awqL9E1JFYnQ28hgWxXV
+
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:3000"]
+        interval: 30s
+        timeout: 10s
+        retries: 5

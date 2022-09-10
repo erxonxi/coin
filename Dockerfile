@@ -1,0 +1,11 @@
+FROM ubuntu:bionic
+
+WORKDIR /app
+
+COPY tmp/ ./
+COPY coin ./
+
+ENV NODE_ID=3000
+ENV MINE_ADDRESS=1PprhXRdQQB5LjY5FNTNjkRbuxwc1E3Fh
+
+ENTRYPOINT ./coin server -a $MINE_ADDRESS
