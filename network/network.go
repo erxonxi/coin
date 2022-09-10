@@ -26,7 +26,7 @@ const (
 var (
 	nodeAddress     string
 	mineAddress     string
-	KnownNodes      = []string{"172.17.0.1:3000"}
+	KnownNodes      = []string{"localhost:3000"}
 	blocksInTransit = [][]byte{}
 	memoryPool      = make(map[string]blockchain.Transaction)
 )
@@ -494,6 +494,7 @@ func CloseDB(chain *blockchain.BlockChain) {
 }
 
 func GetIP() string {
+	return "localhost"
 	var ip net.IP
 
 	ifaces, err := net.Interfaces()
