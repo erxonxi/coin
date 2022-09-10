@@ -26,7 +26,7 @@ const (
 var (
 	nodeAddress     string
 	mineAddress     string
-	KnownNodes      = []string{"localhost:3000"}
+	KnownNodes      = []string{"172.17.0.1:3000"}
 	blocksInTransit = [][]byte{}
 	memoryPool      = make(map[string]blockchain.Transaction)
 )
@@ -436,7 +436,7 @@ func HandleConnection(conn net.Conn, chain *blockchain.BlockChain) {
 }
 
 func StartServer(nodeID, minerAddress string) {
-	nodeAddress = fmt.Sprintf("localhost:%s", nodeID)
+	nodeAddress = fmt.Sprintf("%s:%s", GetIP(), nodeID)
 	mineAddress = minerAddress
 	ln, err := net.Listen(protocol, nodeAddress)
 	if err != nil {
@@ -491,4 +491,31 @@ func CloseDB(chain *blockchain.BlockChain) {
 		defer runtime.Goexit()
 		chain.Database.Close()
 	})
+}
+
+func GetIP() string {
+	var ip net.IP
+
+	ifaces, err := net.Interfaces()
+	Handle(err)
+	for _, i := range ifaces {
+		addrs, err := i.Addrs()
+		Handle(err)
+		for _, addr := range addrs {
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+		}
+	}
+
+	return ip.To16().String()
+}
+
+func Handle(err error) {
+	if err != nil {
+		log.Panic(err)
+	}
 }

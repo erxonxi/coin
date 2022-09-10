@@ -21,7 +21,7 @@ services:
       - MINE_ADDRESS=1GAiXWkPjWqCw2awqL9E1JFYnQ28hgWxXV
 
     healthcheck:
-        test: ["CMD", "curl", "-f", "http://localhost:3000"]
+        test: ["CMD", "curl", "-v", "telnet://localhost:3000"]
         interval: 30s
         timeout: 10s
-        retries: 5
+        retries: 10
