@@ -25,10 +25,8 @@ func init() {
 func serverFun(cmd *cobra.Command, args []string) {
 	if create == true {
 		createBlockChain(address)
-		return
 	}
 
-	// getBalance(address)
 	printBlockChain(address)
 }
 
