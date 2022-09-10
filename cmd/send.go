@@ -15,13 +15,14 @@ import (
 var from string
 var to string
 var amount int
+var mine bool
 
 var sendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "Command to send amount to address",
 	Long: `You can send amount to address whith address
 For example:
-coin send --from "Xonxi" --to "Juan" --amount 10
+coin send --from "17fX5v53fG1kHacpAPEw8BW8stqQh1L7ku" --to "1PZ9vJyEbpAWPfvQEvZM24PnUYk1b5gpsw" --amount 10
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		nodeID := os.Getenv("NODE_ID")
@@ -29,16 +30,17 @@ coin send --from "Xonxi" --to "Juan" --amount 10
 			log.Panic("Please provide a NODE_ID")
 		}
 
-		send(from, to, amount, nodeID, false)
+		send(from, to, amount, nodeID, mine)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(sendCmd)
 
-	sendCmd.Flags().StringVarP((&from), "from", "f", "Xonxi", "Address from send amount")
-	sendCmd.Flags().StringVarP((&to), "to", "t", "Juan", "Address to send amount")
-	sendCmd.Flags().IntVarP((&amount), "amount", "a", 10, "Address to send amount")
+	sendCmd.Flags().StringVarP((&from), "from", "f", "17fX5v53fG1kHacpAPEw8BW8stqQh1L7ku", "Address from send amount")
+	sendCmd.Flags().StringVarP((&to), "to", "t", "1PZ9vJyEbpAWPfvQEvZM24PnUYk1b5gpsw", "Address to send amount")
+	sendCmd.Flags().IntVarP((&amount), "amount", "a", 10, "Ammount to send")
+	sendCmd.Flags().BoolVarP((&mine), "mine", "m", false, "Autmine this transaction")
 }
 
 func send(from, to string, amount int, nodeID string, mineNow bool) {
@@ -50,7 +52,6 @@ func send(from, to string, amount int, nodeID string, mineNow bool) {
 	}
 	chain := blockchain.ContinueBlockChain(nodeID)
 	UTXOSet := blockchain.UTXOSet{chain}
-	defer chain.Database.Close()
 
 	wallets, err := wallet.CreateWallets(nodeID)
 	if err != nil {
@@ -68,6 +69,8 @@ func send(from, to string, amount int, nodeID string, mineNow bool) {
 		network.SendTx(network.KnownNodes[0], tx)
 		fmt.Println("send tx")
 	}
+
+	defer chain.Database.Close()
 
 	fmt.Println("Success!")
 

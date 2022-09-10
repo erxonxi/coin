@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -30,10 +31,16 @@ func init() {
 }
 
 func getBalance() {
+	nodeID := os.Getenv("NODE_ID")
+	if nodeID == "" {
+		log.Panic("Please provide a NODE_ID")
+	}
+
 	if !wallet.ValidateAddress(address) {
 		log.Panic("Address is not Valid")
 	}
-	chain := blockchain.ContinueBlockChain(address)
+
+	chain := blockchain.ContinueBlockChain(nodeID)
 	UTXOSet := blockchain.UTXOSet{chain}
 	defer chain.Database.Close()
 
