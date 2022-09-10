@@ -22,5 +22,4 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringVarP((&address), "address", "a", "15AfJY1BtvMsD5Zzd7mtBLyaxQavTESxaa", "Addres of blockchain")
 }

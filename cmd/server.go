@@ -1,7 +1,11 @@
 package cmd
 
 import (
+	"fmt"
+	"log"
+
 	"github.com/erxonxi/coin/blockchain"
+	"github.com/erxonxi/coin/wallet"
 	"github.com/spf13/cobra"
 )
 
@@ -30,9 +34,16 @@ func serverFun(cmd *cobra.Command, args []string) {
 }
 
 func createBlockChain(address string) {
+	if !wallet.ValidateAddress(address) {
+		log.Panic("Address is not Valid")
+	}
 	chain := blockchain.InitBlockChain(address)
-	chain.PrintChain()
-	defer chain.Database.Close()
+
+	UTXOSet := blockchain.UTXOSet{chain}
+	UTXOSet.Reindex()
+
+	chain.Database.Close()
+	fmt.Println("Finished!")
 }
 
 func printBlockChain(address string) {

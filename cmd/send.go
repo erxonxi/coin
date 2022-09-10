@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/spf13/cobra"
 
 	"github.com/erxonxi/coin/blockchain"
+	"github.com/erxonxi/coin/wallet"
 )
 
 var from string
@@ -31,10 +33,21 @@ func init() {
 }
 
 func sendFunc(cmd *cobra.Command, args []string) {
+	if !wallet.ValidateAddress(to) {
+		log.Panic("Invalid address")
+	}
+
+	if !wallet.ValidateAddress(from) {
+		log.Panic("Invalid address")
+	}
+
 	chain := blockchain.ContinueBlockChain(from)
+	UTXOSet := blockchain.UTXOSet{chain}
 	defer chain.Database.Close()
 
-	tx := blockchain.NewTransaction(from, to, amount, chain)
-	chain.AddBlock([]*blockchain.Transaction{tx})
+	tx := blockchain.NewTransaction(from, to, amount, &UTXOSet)
+	block := chain.AddBlock([]*blockchain.Transaction{tx})
+	UTXOSet.Update(block)
+
 	fmt.Println("Send successfuly!")
 }
