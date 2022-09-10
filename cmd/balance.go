@@ -47,7 +47,7 @@ func getBalance() {
 	balance := 0
 	pubKeyHash := wallet.Base58Decode([]byte(address))
 	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
-	UTXOs := UTXOSet.FindUTXO(pubKeyHash)
+	UTXOs := UTXOSet.FindUnspentTransactions(pubKeyHash)
 
 	for _, out := range UTXOs {
 		balance += out.Value

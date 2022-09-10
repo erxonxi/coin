@@ -82,8 +82,6 @@ func printBlockChain(nodeID string, address string) {
 	UTXOSet := blockchain.UTXOSet{chain}
 	UTXOSet.Reindex()
 
-	chain.PrintChain()
-
 	chain.Database.Close()
 	fmt.Println("Finished!")
 }

@@ -342,7 +342,7 @@ func MineTx(chain *blockchain.BlockChain) {
 	var txs []*blockchain.Transaction
 
 	for id := range memoryPool {
-		fmt.Printf("tx: %s\n", memoryPool[id].ID)
+		fmt.Printf("tx: %x\n", memoryPool[id].ID)
 		tx := memoryPool[id]
 		if chain.VerifyTransaction(&tx) {
 			txs = append(txs, &tx)

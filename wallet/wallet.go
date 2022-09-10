@@ -6,8 +6,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
-	"crypto/x509"
-	"encoding/pem"
 	"log"
 
 	"golang.org/x/crypto/ripemd160"
@@ -33,16 +31,6 @@ func (w Wallet) Address() []byte {
 	address := Base58Encode(fullHash)
 
 	return address
-}
-
-func ValidateAddress(address string) bool {
-	pubKeyHash := Base58Decode([]byte(address))
-	actualChecksum := pubKeyHash[len(pubKeyHash)-checksumLength:]
-	version := pubKeyHash[0]
-	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-checksumLength]
-	targetChecksum := Checksum(append([]byte{version}, pubKeyHash...))
-
-	return bytes.Compare(actualChecksum, targetChecksum) == 0
 }
 
 func NewKeyPair() (ecdsa.PrivateKey, []byte) {
@@ -85,16 +73,12 @@ func Checksum(payload []byte) []byte {
 	return secondHash[:checksumLength]
 }
 
-func EncodePriveteKey(privateKey *ecdsa.PrivateKey) []byte {
-	x509Encoded, _ := x509.MarshalECPrivateKey(privateKey)
-	pemEncoded := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: x509Encoded})
-	return pemEncoded
-}
+func ValidateAddress(address string) bool {
+	pubKeyHash := Base58Decode([]byte(address))
+	actualChecksum := pubKeyHash[len(pubKeyHash)-checksumLength:]
+	version := pubKeyHash[0]
+	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-checksumLength]
+	targetChecksum := Checksum(append([]byte{version}, pubKeyHash...))
 
-func DecodePriveteKey(pemEncoded []byte) *ecdsa.PrivateKey {
-	block, _ := pem.Decode(pemEncoded)
-	x509Encoded := block.Bytes
-	privateKey, _ := x509.ParseECPrivateKey(x509Encoded)
-
-	return privateKey
+	return bytes.Compare(actualChecksum, targetChecksum) == 0
 }
