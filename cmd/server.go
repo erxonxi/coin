@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/erxonxi/coin/blockchain"
+	"github.com/erxonxi/coin/network"
 	"github.com/erxonxi/coin/wallet"
 	"github.com/spf13/cobra"
 )
@@ -26,18 +28,23 @@ func init() {
 }
 
 func serverFun(cmd *cobra.Command, args []string) {
+	nodeID := os.Getenv("NODE_ID")
+	if nodeID == "" {
+		log.Panic("Please provide a NODE_ID")
+	}
+
 	if create == true {
-		createBlockChain(address)
+		createBlockChain(nodeID, address)
 	} else {
-		printBlockChain(address)
+		StartNode(nodeID, address)
 	}
 }
 
-func createBlockChain(address string) {
+func createBlockChain(nodeID string, address string) {
 	if !wallet.ValidateAddress(address) {
 		log.Panic("Address is not Valid")
 	}
-	chain := blockchain.InitBlockChain(address)
+	chain := blockchain.InitBlockChain(address, nodeID)
 
 	UTXOSet := blockchain.UTXOSet{chain}
 	UTXOSet.Reindex()
@@ -46,8 +53,15 @@ func createBlockChain(address string) {
 	fmt.Println("Finished!")
 }
 
-func printBlockChain(address string) {
-	chain := blockchain.ContinueBlockChain(address)
-	chain.PrintChain()
-	defer chain.Database.Close()
+func StartNode(nodeID, minerAddress string) {
+	fmt.Printf("Starting Node %s\n", nodeID)
+
+	if len(minerAddress) > 0 {
+		if wallet.ValidateAddress(minerAddress) {
+			fmt.Println("Mining is on. Address to receive rewards: ", minerAddress)
+		} else {
+			log.Panic("Wrong miner address!")
+		}
+	}
+	network.StartServer(nodeID, minerAddress)
 }

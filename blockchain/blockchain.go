@@ -15,9 +15,8 @@ import (
 )
 
 const (
-	dbPath      = "./tmp/blocks"
-	dbFile      = "./tmp/blocks/MANIFEST"
-	genesisData = "genesis"
+	dbPath      = "./tmp/blocks_%s"
+	genesisData = "GENESIS"
 )
 
 type BlockChain struct {
@@ -25,10 +24,101 @@ type BlockChain struct {
 	Database *badger.DB
 }
 
-func (chain *BlockChain) AddBlock(txs []*Transaction) *Block {
-	var lastHash []byte
+func (chain *BlockChain) AddBlock(block *Block) {
+	err := chain.Database.Update(func(txn *badger.Txn) error {
+		if _, err := txn.Get(block.Hash); err == nil {
+			return nil
+		}
 
-	for _, tx := range txs {
+		blockData := block.Serialize()
+		err := txn.Set(block.Hash, blockData)
+		Handle(err)
+
+		item, err := txn.Get([]byte("lh"))
+		Handle(err)
+		lastHash, _ := item.ValueCopy(nil)
+
+		item, err = txn.Get(lastHash)
+		Handle(err)
+		lastBlockData, _ := item.ValueCopy(nil)
+
+		lastBlock := Deserialize(lastBlockData)
+
+		if block.Height > lastBlock.Height {
+			err = txn.Set([]byte("lh"), block.Hash)
+			Handle(err)
+			chain.LastHash = block.Hash
+		}
+
+		return nil
+	})
+	Handle(err)
+}
+
+func (chain *BlockChain) GetBestHeight() int {
+	var lastBlock Block
+
+	err := chain.Database.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte("lh"))
+		Handle(err)
+		lastHash, _ := item.ValueCopy(nil)
+
+		item, err = txn.Get(lastHash)
+		Handle(err)
+		lastBlockData, _ := item.ValueCopy(nil)
+
+		lastBlock = *Deserialize(lastBlockData)
+
+		return nil
+	})
+	Handle(err)
+
+	return lastBlock.Height
+}
+
+func (chain *BlockChain) GetBlock(blockHash []byte) (Block, error) {
+	var block Block
+
+	err := chain.Database.View(func(txn *badger.Txn) error {
+		if item, err := txn.Get(blockHash); err != nil {
+			return errors.New("Block is not found")
+		} else {
+			blockData, _ := item.ValueCopy(nil)
+
+			block = *Deserialize(blockData)
+		}
+		return nil
+	})
+	if err != nil {
+		return block, err
+	}
+
+	return block, nil
+}
+
+func (chain *BlockChain) GetBlockHashes() [][]byte {
+	var blocks [][]byte
+
+	iter := chain.Iterator()
+
+	for {
+		block := iter.Next()
+
+		blocks = append(blocks, block.Hash)
+
+		if len(block.PrevHash) == 0 {
+			break
+		}
+	}
+
+	return blocks
+}
+
+func (chain *BlockChain) MineBlock(transactions []*Transaction) *Block {
+	var lastHash []byte
+	var lastHeight int
+
+	for _, tx := range transactions {
 		if chain.VerifyTransaction(tx) != true {
 			log.Panic("Invalid Transaction")
 		}
@@ -38,11 +128,20 @@ func (chain *BlockChain) AddBlock(txs []*Transaction) *Block {
 		item, err := txn.Get([]byte("lh"))
 		Handle(err)
 		lastHash, err = item.ValueCopy(nil)
+
+		item, err = txn.Get(lastHash)
+		Handle(err)
+		lastBlockData, _ := item.ValueCopy(nil)
+
+		lastBlock := Deserialize(lastBlockData)
+
+		lastHeight = lastBlock.Height
+
 		return err
 	})
 	Handle(err)
 
-	newBlock := CreateBlock(txs, lastHash)
+	newBlock := CreateBlock(transactions, lastHash, lastHeight+1)
 
 	err = chain.Database.Update(func(txn *badger.Txn) error {
 		err := txn.Set(newBlock.Hash, newBlock.Serialize())
@@ -188,15 +287,16 @@ Work:
 	return accumulated, unspentOuts
 }
 
-func ContinueBlockChain(address string) *BlockChain {
-	if DBexists() == false {
+func ContinueBlockChain(nodeId string) *BlockChain {
+	path := fmt.Sprintf(dbPath, nodeId)
+	if DBexists(path) == false {
 		fmt.Println("No existing blockchain found, create one!")
 		runtime.Goexit()
 	}
 
 	var lastHash []byte
 
-	opts := badger.DefaultOptions(dbPath)
+	opts := badger.DefaultOptions(path)
 	db, err := badger.Open(opts)
 	Handle(err)
 
@@ -214,15 +314,16 @@ func ContinueBlockChain(address string) *BlockChain {
 	return &chain
 }
 
-func InitBlockChain(address string) *BlockChain {
-	var lastHash []byte
-
-	if DBexists() {
+func InitBlockChain(address string, nodeId string) *BlockChain {
+	path := fmt.Sprintf(dbPath, nodeId)
+	if DBexists(path) {
 		fmt.Println("Blockchain already exists")
 		runtime.Goexit()
 	}
 
-	opts := badger.DefaultOptions(dbPath)
+	var lastHash []byte
+
+	opts := badger.DefaultOptions(path)
 	db, err := badger.Open(opts)
 	Handle(err)
 
@@ -246,8 +347,8 @@ func InitBlockChain(address string) *BlockChain {
 	return &blockchain
 }
 
-func DBexists() bool {
-	if _, err := os.Stat(dbFile); os.IsNotExist(err) {
+func DBexists(path string) bool {
+	if _, err := os.Stat(path + "/MANIFEST"); os.IsNotExist(err) {
 		return false
 	}
 
