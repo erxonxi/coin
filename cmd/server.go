@@ -12,6 +12,7 @@ import (
 )
 
 var create bool
+var printChain bool
 
 var serverCmd = &cobra.Command{
 	Use:   "server",
@@ -23,14 +24,20 @@ var serverCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(serverCmd)
 
-	serverCmd.Flags().StringVarP((&address), "address", "a", "Xonxi", "Create new blockchain")
+	serverCmd.Flags().StringVarP((&address), "address", "a", "Xonxi", "Address to mine blockchain")
 	serverCmd.Flags().BoolVarP((&create), "create", "c", false, "Create new blockchain")
+	serverCmd.Flags().BoolVarP((&printChain), "print", "p", false, "Print blockchain")
 }
 
 func serverFun(cmd *cobra.Command, args []string) {
 	nodeID := os.Getenv("NODE_ID")
 	if nodeID == "" {
 		log.Panic("Please provide a NODE_ID")
+	}
+
+	if printChain == true {
+		printBlockChain(nodeID, address)
+		return
 	}
 
 	if create == true {
@@ -64,4 +71,19 @@ func StartNode(nodeID, minerAddress string) {
 		}
 	}
 	network.StartServer(nodeID, minerAddress)
+}
+
+func printBlockChain(nodeID string, address string) {
+	if !wallet.ValidateAddress(address) {
+		log.Panic("Address is not Valid")
+	}
+	chain := blockchain.ContinueBlockChain(nodeID)
+
+	UTXOSet := blockchain.UTXOSet{chain}
+	UTXOSet.Reindex()
+
+	chain.PrintChain()
+
+	chain.Database.Close()
+	fmt.Println("Finished!")
 }
