@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/erxonxi/coin/blockchain"
 	"github.com/spf13/cobra"
 )
@@ -43,18 +41,4 @@ func printBlockChain(address string) {
 	chain := blockchain.ContinueBlockChain(address)
 	chain.PrintChain()
 	defer chain.Database.Close()
-}
-
-func getBalance(address string) {
-	chain := blockchain.ContinueBlockChain(address)
-	defer chain.Database.Close()
-
-	balance := 0
-	UTXOs := chain.FindUTXO(address)
-
-	for _, out := range UTXOs {
-		balance += out.Value
-	}
-
-	fmt.Printf("Balance of %s: %d\n", address, balance)
 }
