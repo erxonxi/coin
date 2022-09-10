@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 
 	"github.com/dgraph-io/badger/v3"
 )
@@ -297,14 +299,14 @@ func ContinueBlockChain(nodeId string) *BlockChain {
 	var lastHash []byte
 
 	opts := badger.DefaultOptions(path)
-	db, err := badger.Open(opts)
+	db, err := openDB(path, opts)
 	Handle(err)
 
 	err = db.Update(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte("lh"))
 		Handle(err)
-
 		lastHash, err = item.ValueCopy(nil)
+
 		return err
 	})
 	Handle(err)
@@ -314,17 +316,16 @@ func ContinueBlockChain(nodeId string) *BlockChain {
 	return &chain
 }
 
-func InitBlockChain(address string, nodeId string) *BlockChain {
+func InitBlockChain(address, nodeId string) *BlockChain {
 	path := fmt.Sprintf(dbPath, nodeId)
 	if DBexists(path) {
 		fmt.Println("Blockchain already exists")
 		runtime.Goexit()
 	}
-
 	var lastHash []byte
-
 	opts := badger.DefaultOptions(path)
-	db, err := badger.Open(opts)
+
+	db, err := openDB(path, opts)
 	Handle(err)
 
 	err = db.Update(func(txn *badger.Txn) error {
@@ -425,4 +426,29 @@ func (iter *BlockChainIterator) Next() *Block {
 	iter.CurrentHash = block.PrevHash
 
 	return block
+}
+
+func retry(dir string, originalOpts badger.Options) (*badger.DB, error) {
+	lockPath := filepath.Join(dir, "LOCK")
+	if err := os.Remove(lockPath); err != nil {
+		return nil, fmt.Errorf(`removing "LOCK": %s`, err)
+	}
+	retryOpts := originalOpts
+	db, err := badger.Open(retryOpts)
+	return db, err
+}
+
+func openDB(dir string, opts badger.Options) (*badger.DB, error) {
+	if db, err := badger.Open(opts); err != nil {
+		if strings.Contains(err.Error(), "LOCK") {
+			if db, err := retry(dir, opts); err == nil {
+				log.Println("database unlocked, value log truncated")
+				return db, nil
+			}
+			log.Println("could not unlock database:", err)
+		}
+		return nil, err
+	} else {
+		return db, nil
+	}
 }

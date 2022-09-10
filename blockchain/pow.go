@@ -10,7 +10,7 @@ import (
 )
 
 // few bytes must contain 0s to mine
-const Difficulty = 26
+const Difficulty = 10
 
 type ProofOfWork struct {
 	Block  *Block
