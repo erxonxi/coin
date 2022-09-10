@@ -1,17 +1,16 @@
 package cmd
 
 import (
-	"log"
-	"net/http"
+	"fmt"
 
 	"github.com/erxonxi/coin/blockchain"
-	"github.com/gorilla/websocket"
 	"github.com/spf13/cobra"
 )
 
-var upgrader = websocket.Upgrader{} // use default options
+var create bool
+var address string
 
-var runCmd = &cobra.Command{
+var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "A command to run a network",
 	Long:  `This command will run a network for coin blockchain.`,
@@ -19,44 +18,43 @@ var runCmd = &cobra.Command{
 }
 
 func init() {
-	chain := blockchain.InitBlockChain()
-	defer chain.Database.Close()
+	rootCmd.AddCommand(serverCmd)
 
-	chain.AddBlock("Hello World")
-	chain.AddBlock("Other World")
-	chain.AddBlock("Three World")
-
-	chain.PrintChain()
-
-	rootCmd.AddCommand(runCmd)
+	serverCmd.Flags().StringVarP((&address), "address", "a", "Xonxi", "Create new blockchain")
+	serverCmd.Flags().BoolVarP((&create), "create", "c", false, "Create new blockchain")
 }
 
 func serverFun(cmd *cobra.Command, args []string) {
-	http.HandleFunc("/echo", echo)
-	log.Fatal(http.ListenAndServe("localhost:8000", nil))
-}
-
-func echo(w http.ResponseWriter, r *http.Request) {
-	c, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Print("upgrade:", err)
+	if create == true {
+		createBlockChain(address)
 		return
 	}
-	defer c.Close()
 
-	for {
-		mt, message, err := c.ReadMessage()
-		if err != nil {
-			log.Println("read:", err)
-			break
-		}
+	// getBalance(address)
+	printBlockChain(address)
+}
 
-		log.Printf("recv: %s", message)
+func createBlockChain(address string) {
+	chain := blockchain.InitBlockChain(address)
+	defer chain.Database.Close()
+}
 
-		err = c.WriteMessage(mt, message)
-		if err != nil {
-			log.Println("write:", err)
-			break
-		}
+func printBlockChain(address string) {
+	chain := blockchain.ContinueBlockChain(address)
+	chain.PrintChain()
+	defer chain.Database.Close()
+}
+
+func getBalance(address string) {
+	chain := blockchain.ContinueBlockChain(address)
+	defer chain.Database.Close()
+
+	balance := 0
+	UTXOs := chain.FindUTXO(address)
+
+	for _, out := range UTXOs {
+		balance += out.Value
 	}
+
+	fmt.Printf("Balance of %s: %d\n", address, balance)
 }
