@@ -8,12 +8,12 @@ import (
 )
 
 type Block struct {
-	Timestamp    int64
-	Hash         []byte
-	Transactions []*Transaction
-	PrevHash     []byte
-	Nonce        int
-	Height       int
+	Timestamp    int64          `json:"timestamp"`
+	Hash         []byte         `json:"hash"`
+	Transactions []*Transaction `json:"transactions"`
+	PrevHash     []byte         `json:"prevHash"`
+	Nonce        int            `json:"nonce"`
+	Height       int            `json:"height"`
 }
 
 func (b *Block) HashTransactions() []byte {

@@ -17,9 +17,9 @@ import (
 )
 
 type Transaction struct {
-	ID      []byte
-	Inputs  []TxInput
-	Outputs []TxOutput
+	ID      []byte     `json:"id"`
+	Inputs  []TxInput  `json:"inputs"`
+	Outputs []TxOutput `json:"outputs"`
 }
 
 func (tx *Transaction) Hash() []byte {

@@ -8,19 +8,19 @@ import (
 )
 
 type TxOutput struct {
-	Value      int
-	PubKeyHash []byte
+	Value      int    `json:"value"`
+	PubKeyHash []byte `json:"pubKeyHash"`
 }
 
 type TxOutputs struct {
-	Outputs []TxOutput
+	Outputs []TxOutput `json:"outputs"`
 }
 
 type TxInput struct {
-	ID        []byte
-	Out       int
-	Signature []byte
-	PubKey    []byte
+	ID        []byte `json:"id"`
+	Out       int    `json:"out"`
+	Signature []byte `json:"signature"`
+	PubKey    []byte `json:"pubKey"`
 }
 
 func (in *TxInput) UsesKey(pubKeyHash []byte) bool {
