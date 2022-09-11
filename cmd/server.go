@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/erxonxi/coin/blockchain"
 	"github.com/erxonxi/coin/network"
@@ -36,7 +37,7 @@ func serverFun(cmd *cobra.Command, args []string) {
 	}
 
 	if printChain == true {
-		printBlockChain(nodeID, address)
+		printBlockChain(nodeID)
 		return
 	}
 
@@ -73,15 +74,25 @@ func StartNode(nodeID, minerAddress string) {
 	network.StartServer(nodeID, minerAddress)
 }
 
-func printBlockChain(nodeID string, address string) {
-	if !wallet.ValidateAddress(address) {
-		log.Panic("Address is not Valid")
-	}
+func printBlockChain(nodeID string) {
 	chain := blockchain.ContinueBlockChain(nodeID)
+	defer chain.Database.Close()
+	iter := chain.Iterator()
 
-	UTXOSet := blockchain.UTXOSet{chain}
-	UTXOSet.Reindex()
+	for {
+		block := iter.Next()
 
-	chain.Database.Close()
-	fmt.Println("Finished!")
+		fmt.Printf("Hash: %x\n", block.Hash)
+		fmt.Printf("Prev. hash: %x\n", block.PrevHash)
+		pow := blockchain.NewProof(block)
+		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
+		for _, tx := range block.Transactions {
+			fmt.Println(tx)
+		}
+		fmt.Println()
+
+		if len(block.PrevHash) == 0 {
+			break
+		}
+	}
 }
