@@ -71,6 +71,23 @@ func CoinbaseTx(to, data string) *Transaction {
 	return &tx
 }
 
+func RewardTx(to, data string) *Transaction {
+	if data == "" {
+		randData := make([]byte, 24)
+		_, err := rand.Read(randData)
+		Handle(err)
+		data = fmt.Sprintf("%x", randData)
+	}
+
+	txin := TxInput{[]byte{}, -1, nil, []byte(data)}
+	txout := NewTXOutput(1, to)
+
+	tx := Transaction{nil, []TxInput{txin}, []TxOutput{*txout}}
+	tx.ID = tx.Hash()
+
+	return &tx
+}
+
 func NewTransaction(w *wallet.Wallet, to string, amount int, UTXO *UTXOSet) *Transaction {
 	var inputs []TxInput
 	var outputs []TxOutput
