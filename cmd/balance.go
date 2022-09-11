@@ -27,7 +27,7 @@ coin balance --address "15AfJY1BtvMsD5Zzd7mtBLyaxQavTESxaa"
 func init() {
 	rootCmd.AddCommand(balanceCmd)
 
-	balanceCmd.Flags().StringVarP((&address), "address", "a", "15AfJY1BtvMsD5Zzd7mtBLyaxQavTESxaa", "Addres of blockchain")
+	balanceCmd.Flags().StringVarP((&address), "address", "a", "15AfJY1BtvMsD5Zzd7mtBLyaxQavTESxaa", "Your address of blockchain")
 }
 
 func getBalance() {

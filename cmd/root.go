@@ -10,7 +10,7 @@ var address string
 
 var rootCmd = &cobra.Command{
 	Use:   "coin",
-	Short: "Command Interface for coin network communication.",
+	Short: "Command line interface for coin blockchain.",
 	Long:  `You can run flag "--help" for more information about the command interface.`,
 }
 

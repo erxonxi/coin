@@ -11,11 +11,9 @@ import (
 
 var walletCmd = &cobra.Command{
 	Use:   "wallet",
-	Short: "Command to manage your wallet.",
-	Long: `Command to manage your wallet.
-For example:
-`,
-	Run: walletFunc,
+	Short: "Command to manage your wallets.",
+	Long:  `Command to manage your wallets.`,
+	Run:   walletFunc,
 }
 
 func init() {

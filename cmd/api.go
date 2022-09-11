@@ -9,9 +9,7 @@ import (
 var apiCmd = &cobra.Command{
 	Use:   "api",
 	Short: "Command to run the API server.",
-	Long: `Command to run the API server.
-For example:
-`,
+	Long:  `Command to run the API server.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		api.StartServer()
 	},

@@ -39,8 +39,8 @@ func init() {
 
 	sendCmd.Flags().StringVarP((&from), "from", "f", "17fX5v53fG1kHacpAPEw8BW8stqQh1L7ku", "Address from send amount")
 	sendCmd.Flags().StringVarP((&to), "to", "t", "1PZ9vJyEbpAWPfvQEvZM24PnUYk1b5gpsw", "Address to send amount")
-	sendCmd.Flags().IntVarP((&amount), "amount", "a", 10, "Ammount to send")
-	sendCmd.Flags().BoolVarP((&mine), "mine", "m", false, "Autmine this transaction")
+	sendCmd.Flags().IntVarP((&amount), "amount", "a", 10, "Ammount of your balance to send")
+	sendCmd.Flags().BoolVarP((&mine), "mine", "m", false, "Automine this transaction in this node")
 }
 
 func send(from, to string, amount int, nodeID string, mineNow bool) {

@@ -25,9 +25,9 @@ var serverCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(serverCmd)
 
-	serverCmd.Flags().StringVarP((&address), "address", "a", "Xonxi", "Address to mine blockchain")
-	serverCmd.Flags().BoolVarP((&create), "create", "c", false, "Create new blockchain")
-	serverCmd.Flags().BoolVarP((&printChain), "print", "p", false, "Print blockchain")
+	serverCmd.Flags().StringVarP((&address), "address", "a", "17fX5v53fG1kHacpAPEw8BW8stqQh1L7ku", "Yout address to connect to blockchain")
+	serverCmd.Flags().BoolVarP((&create), "create", "c", false, "Create a new blockchain")
+	serverCmd.Flags().BoolVarP((&printChain), "print", "p", false, "Print blocks of blockchain")
 }
 
 func serverFun(cmd *cobra.Command, args []string) {
