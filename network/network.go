@@ -354,7 +354,7 @@ func MineTx(chain *blockchain.BlockChain) {
 		return
 	}
 
-	cbTx := blockchain.CoinbaseTx(mineAddress, "", 1)
+	cbTx := blockchain.CoinbaseTx(mineAddress, "")
 	txs = append(txs, cbTx)
 
 	newBlock := chain.MineBlock(txs)
