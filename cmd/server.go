@@ -54,7 +54,7 @@ func createBlockChain(nodeID string, address string) {
 	}
 	chain := blockchain.InitBlockChain(address, nodeID)
 
-	UTXOSet := blockchain.UTXOSet{chain}
+	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
 	UTXOSet.Reindex()
 
 	chain.Database.Close()

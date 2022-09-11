@@ -51,7 +51,7 @@ func send(from, to string, amount int, nodeID string, mineNow bool) {
 		log.Panic("Address is not Valid")
 	}
 	chain := blockchain.ContinueBlockChain(nodeID)
-	UTXOSet := blockchain.UTXOSet{chain}
+	utxoset := blockchain.UTXOSet{Blockchain: chain}
 
 	wallets, err := wallet.CreateWallets(nodeID)
 	if err != nil {
@@ -59,12 +59,12 @@ func send(from, to string, amount int, nodeID string, mineNow bool) {
 	}
 	wallet := wallets.GetWallet(from)
 
-	tx := blockchain.NewTransaction(&wallet, to, amount, &UTXOSet)
+	tx := blockchain.NewTransaction(&wallet, to, amount, &utxoset)
 	if mineNow {
 		cbTx := blockchain.CoinbaseTx(from, "mine_reward", 1)
 		txs := []*blockchain.Transaction{cbTx, tx}
 		block := chain.MineBlock(txs)
-		UTXOSet.Update(block)
+		utxoset.Update(block)
 	} else {
 		network.SendTx(network.KnownNodes[0], tx)
 		fmt.Println("send tx")

@@ -41,7 +41,7 @@ func getBalance() {
 	}
 
 	chain := blockchain.ContinueBlockChain(nodeID)
-	UTXOSet := blockchain.UTXOSet{chain}
+	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
 	defer chain.Database.Close()
 
 	balance := 0

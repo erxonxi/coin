@@ -223,7 +223,7 @@ func HandleBlock(request []byte, chain *blockchain.BlockChain) {
 
 		blocksInTransit = blocksInTransit[1:]
 	} else {
-		UTXOSet := blockchain.UTXOSet{chain}
+		UTXOSet := blockchain.UTXOSet{Blockchain: chain}
 		UTXOSet.Reindex()
 	}
 }
@@ -358,7 +358,7 @@ func MineTx(chain *blockchain.BlockChain) {
 	txs = append(txs, cbTx)
 
 	newBlock := chain.MineBlock(txs)
-	UTXOSet := blockchain.UTXOSet{chain}
+	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
 	UTXOSet.Reindex()
 
 	fmt.Println("New Block mined")
