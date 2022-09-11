@@ -9,9 +9,6 @@ import (
 )
 
 func HandleStream(stream network.Stream) {
-	fmt.Println("Got a new stream!")
-
-	// Create a buffer stream for non blocking read and write.
 	rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
 	go ReadData(rw)
@@ -30,9 +27,7 @@ func ReadData(rw *bufio.ReadWriter) {
 			return
 		}
 		if str != "\n" {
-			// Green console colour: 	\x1b[32m
-			// Reset console colour: 	\x1b[0m
-			fmt.Printf("\x1b[32m%s\x1b[0m> ", str)
+			fmt.Printf("He conseguido este dato: %s\n", str)
 		}
 
 	}
@@ -42,10 +37,8 @@ func WriteData(rw *bufio.ReadWriter) {
 	stdReader := bufio.NewReader(os.Stdin)
 
 	for {
-		fmt.Print("> ")
 		sendData, err := stdReader.ReadString('\n')
 		if err != nil {
-			fmt.Println("Error reading from stdin")
 			panic(err)
 		}
 
@@ -54,6 +47,7 @@ func WriteData(rw *bufio.ReadWriter) {
 			fmt.Println("Error writing to buffer")
 			panic(err)
 		}
+
 		err = rw.Flush()
 		if err != nil {
 			fmt.Println("Error flushing buffer")

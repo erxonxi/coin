@@ -61,7 +61,7 @@ func send(from, to string, amount int, nodeID string, mineNow bool) {
 
 	tx := blockchain.NewTransaction(&wallet, to, amount, &UTXOSet)
 	if mineNow {
-		cbTx := blockchain.CoinbaseTx(from, "")
+		cbTx := blockchain.CoinbaseTx(from, "mine_reward", 1)
 		txs := []*blockchain.Transaction{cbTx, tx}
 		block := chain.MineBlock(txs)
 		UTXOSet.Update(block)

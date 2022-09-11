@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"context"
 	"crypto/rand"
 	"fmt"
@@ -69,11 +68,7 @@ var nodeCmd = &cobra.Command{
 		if err != nil {
 			fmt.Println("Stream open failed", err)
 		} else {
-			rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
-
-			go network.WriteData(rw)
-			go network.ReadData(rw)
-			fmt.Println("Connected to:", peer)
+			network.HandleStream(stream)
 		}
 
 		select {} //wait here

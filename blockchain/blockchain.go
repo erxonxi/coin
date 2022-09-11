@@ -74,7 +74,7 @@ func InitBlockChain(address, nodeId string) *BlockChain {
 	Handle(err)
 
 	err = db.Update(func(txn *badger.Txn) error {
-		cbtx := CoinbaseTx(address, genesisData)
+		cbtx := CoinbaseTx(address, genesisData, 100000)
 		genesis := Genesis(cbtx)
 		fmt.Println("Genesis created")
 		err = txn.Set(genesis.Hash, genesis.Serialize())
