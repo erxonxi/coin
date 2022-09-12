@@ -2,15 +2,17 @@ package cmd
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
+	"log"
 
-	"github.com/erxonxi/coin/network"
+	"github.com/erxonxi/coin/p2p"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/protocol"
-	"github.com/multiformats/go-multiaddr"
+	"github.com/libp2p/go-libp2p-core/peerstore"
+
 	"github.com/spf13/cobra"
+
+	ma "github.com/multiformats/go-multiaddr"
 )
 
 var port int
@@ -23,56 +25,25 @@ var nodeCmd = &cobra.Command{
 	Short: "",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("[*] Listening on: %s with port: %d\n", hostAddress, port)
+		done := make(chan bool, 1)
 
+		node := makeNode(port, done)
+
+		// autodiscover
 		ctx := context.Background()
-		r := rand.Reader
-
-		// Creates a new RSA key pair for this host.
-		prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
-		if err != nil {
-			panic(err)
-		}
-
-		// 0.0.0.0 will listen on any interface device.
-		sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%d", hostAddress, port))
-
-		// libp2p.New constructs a new libp2p Host.
-		// Other options can be added here.
-		host, err := libp2p.New(
-			libp2p.ListenAddrs(sourceMultiAddr),
-			libp2p.Identity(prvKey),
-		)
-		if err != nil {
-			panic(err)
-		}
-
-		// Set a function as stream handler.
-		// This function is called when a peer initiates a connection and starts a stream with this peer.
-		host.SetStreamHandler(protocol.ID(pid), network.HandleStream)
-
-		fmt.Printf("\n[*] Your Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", hostAddress, port, host.ID().Pretty())
-
-		peerChan := network.InitMDNS(host, group)
-
+		peerChan := p2p.InitMDNS(node, group)
 		peer := <-peerChan // will block untill we discover a peer
 		fmt.Println("Found peer:", peer, ", connecting")
 
-		if err := host.Connect(ctx, peer); err != nil {
+		if err := node.Connect(ctx, peer); err != nil {
 			fmt.Println("Connection failed:", err)
 		}
 
-		// open a stream, this stream will be handled by handleStream other end
-		stream, err := host.NewStream(ctx, peer.ID, protocol.ID(pid))
+		log.Printf("NODE_ID: %s\n", node.ID())
 
-		if err != nil {
-			fmt.Println("Stream open failed", err)
-		} else {
-			network.HandleStream(stream)
+		for {
+			fmt.Println(node.Network().Peers())
 		}
-
-		select {} //wait here
-
 	},
 }
 
@@ -83,4 +54,31 @@ func init() {
 	nodeCmd.Flags().StringVarP((&hostAddress), "host", "o", "0.0.0.0", "The host address")
 	nodeCmd.Flags().StringVarP((&pid), "pid", "i", "/chain/1.1.0", "The host address")
 	nodeCmd.Flags().StringVarP((&group), "group", "g", "main", "The group of peers name")
+}
+
+// helper method - create a lib-p2p host to listen on a port
+func makeNode(port int, done chan bool) *p2p.Node {
+	priv, _, _ := crypto.GenerateKeyPair(crypto.Secp256k1, 256)
+	listen, _ := ma.NewMultiaddr(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", port))
+	host, _ := libp2p.New(
+		libp2p.ListenAddrs(listen),
+		libp2p.Identity(priv),
+	)
+
+	return p2p.NewNode(host, done)
+}
+
+func run(h1, h2 *p2p.Node, done <-chan bool) {
+	// connect peers
+	h1.Peerstore().AddAddrs(h2.ID(), h2.Addrs(), peerstore.PermanentAddrTTL)
+	h2.Peerstore().AddAddrs(h1.ID(), h1.Addrs(), peerstore.PermanentAddrTTL)
+
+	// send messages using the protocols
+	h1.Ping(h2.Host)
+	h2.Ping(h1.Host)
+
+	// block until all responses have been processed
+	for i := 0; i < 8; i++ {
+		<-done
+	}
 }
