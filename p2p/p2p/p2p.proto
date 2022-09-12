@@ -1,8 +1,9 @@
 syntax = "proto3";
 
+option go_package = "example.com/project/protos/fizz";
+
 package protocols.p2p;
 
-// designed to be shared between all app protocols
 message MessageData {
     // shared between all requests
     string clientVersion = 1; // client version
@@ -14,7 +15,6 @@ message MessageData {
     bytes sign = 7;         // signature of message data + method specific data by message authoring node.
 }
 
-//// ping protocol
 message PingRequest {
     MessageData messageData = 1;
     string message = 2;
@@ -23,4 +23,14 @@ message PingRequest {
 message PingResponse {
     MessageData messageData = 1;
     string message = 2;
+}
+
+message InventoryRequest {
+    MessageData messageData = 1;
+    bytes inventory = 2;
+}
+
+message InventoryResponse {
+    MessageData messageData = 1;
+    bytes inventory = 2;
 }

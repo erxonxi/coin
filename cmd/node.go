@@ -3,11 +3,16 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"time"
+	"os"
+	"runtime"
+	"strconv"
+	"syscall"
 
+	"github.com/erxonxi/coin/blockchain"
 	"github.com/erxonxi/coin/p2p"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/vrecan/death"
 
 	"github.com/spf13/cobra"
 
@@ -37,11 +42,12 @@ var nodeCmd = &cobra.Command{
 			fmt.Println("Connection failed:", err)
 		}
 
+		for _, peer := range node.Network().Peers() {
+			block := blockchain.Genesis(blockchain.CoinbaseTx(address, ""))
+			node.SendBlock(peer, block)
+		}
+
 		for {
-			time.Sleep(time.Second * 2)
-			for _, peer := range node.Network().Peers() {
-				node.Ping(peer)
-			}
 		}
 	},
 }
@@ -49,10 +55,11 @@ var nodeCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(nodeCmd)
 
-	nodeCmd.PersistentFlags().IntVarP((&port), "port", "p", 3131, "The source port")
+	nodeCmd.PersistentFlags().IntVarP((&port), "port", "p", 3000, "The source port")
 	nodeCmd.Flags().StringVarP((&hostAddress), "host", "o", "0.0.0.0", "The host address")
 	nodeCmd.Flags().StringVarP((&pid), "pid", "i", "/chain/1.1.0", "The host address")
 	nodeCmd.Flags().StringVarP((&group), "group", "g", "main", "The group of peers name")
+	nodeCmd.Flags().StringVarP((&address), "address", "a", "15AfJY1BtvMsD5Zzd7mtBLyaxQavTESxaa", "Address to mine")
 }
 
 // helper method - create a lib-p2p host to listen on a port
@@ -64,5 +71,23 @@ func makeNode(port int, done chan bool) *p2p.Node {
 		libp2p.Identity(priv),
 	)
 
-	return p2p.NewNode(host, done)
+	node := p2p.NewNode(host, done)
+
+	chain := blockchain.ContinueBlockChain(strconv.Itoa(port))
+	defer chain.Database.Close()
+	go CloseDB(chain)
+
+	node.BlockChain = chain
+
+	return node
+}
+
+func CloseDB(chain *blockchain.BlockChain) {
+	d := death.NewDeath(syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+
+	d.WaitForDeathWithFunc(func() {
+		defer os.Exit(1)
+		defer runtime.Goexit()
+		chain.Database.Close()
+	})
 }

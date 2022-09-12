@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -11,29 +12,32 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
 
+	"github.com/erxonxi/coin/blockchain"
 	pb "github.com/erxonxi/coin/p2p/p2p"
 	ggio "github.com/gogo/protobuf/io"
 )
 
-// node client version
 const clientVersion = "coin/0.0.1"
 
-// Node type - a pb host implementing one or more pb protocols
 type Node struct {
-	host.Host     // lib-pb host
-	*PingProtocol // ping protocol impl
+	host.Host
+	*PingProtocol
+	*InventoryProtocol
+	*blockchain.BlockChain
+	MineAddress            string
+	BlocksInTransit        [][]byte
+	TransactionsMemoryPool map[string]blockchain.Transaction
 }
 
 // Create a new node with its implemented protocols
 func NewNode(host host.Host, done chan bool) *Node {
 	node := &Node{Host: host}
 	node.PingProtocol = NewPingProtocol(node, done)
+	node.InventoryProtocol = NewInvenotryProtocol(node, done)
 	return node
 }
 
 // Authenticate incoming pb message
-// message: a protobufs go data object
-// data: common pb message data
 func (n *Node) authenticateMessage(message proto.Message, data *pb.MessageData) bool {
 	// store a temp ref to signature and remove it from message data
 	// sign is a string to allow easy reset to zero-value (empty string)
@@ -79,10 +83,6 @@ func (n *Node) signData(data []byte) ([]byte, error) {
 }
 
 // Verify incoming pb message data integrity
-// data: data to verify
-// signature: author signature provided in the message payload
-// peerId: author peer id from the message payload
-// pubKeyData: author public key from the message payload
 func (n *Node) verifyData(data []byte, signature []byte, peerId peer.ID, pubKeyData []byte) bool {
 	key, err := crypto.UnmarshalPublicKey(pubKeyData)
 	if err != nil {
@@ -114,7 +114,6 @@ func (n *Node) verifyData(data []byte, signature []byte, peerId peer.ID, pubKeyD
 }
 
 // helper method - generate message data shared between all node's pb protocols
-// messageId: unique for requests, copied from request for responses
 func (n *Node) NewMessageData(messageId string, gossip bool) *pb.MessageData {
 	// Add protobufs bin data for message author public key
 	// this is useful for authenticating  messages forwarded by a node authored by another node
@@ -133,8 +132,6 @@ func (n *Node) NewMessageData(messageId string, gossip bool) *pb.MessageData {
 }
 
 // helper method - writes a protobuf go data object to a network stream
-// data: reference of protobuf go data object to send (not the object itself)
-// s: network stream to write the data to
 func (n *Node) sendProtoMessage(id peer.ID, p protocol.ID, data proto.Message) bool {
 	s, err := n.NewStream(context.Background(), id, p)
 	if err != nil {
@@ -151,4 +148,47 @@ func (n *Node) sendProtoMessage(id peer.ID, p protocol.ID, data proto.Message) b
 		return false
 	}
 	return true
+}
+
+// add transaction to memory pool
+func (n *Node) AddTransaction(tx *blockchain.Transaction) {
+	n.TransactionsMemoryPool[string(tx.ID)] = *tx
+}
+
+// mine transactions of memory pool
+func (n *Node) MineTxs() {
+	var txs []*blockchain.Transaction
+
+	for id := range n.TransactionsMemoryPool {
+		fmt.Printf("tx: %x\n", n.TransactionsMemoryPool[id].ID)
+		tx := n.TransactionsMemoryPool[id]
+		if n.BlockChain.VerifyTransaction(&tx) {
+			txs = append(txs, &tx)
+		}
+	}
+
+	if len(txs) == 0 {
+		fmt.Println("All Transactions are invalid")
+		return
+	}
+
+	cbTx := blockchain.RewardTx(n.MineAddress, "")
+	txs = append(txs, cbTx)
+
+	newBlock := n.MineBlock(txs)
+	UTXOSet := blockchain.UTXOSet{Blockchain: n.BlockChain}
+	UTXOSet.Reindex()
+
+	fmt.Println("New block mined: " + string(newBlock.Hash))
+
+	// TODO Send To Other Nodes The Block Hash Founded
+	// for _, node := range KnownNodes {
+	// if node != nodeAddress {
+	// 	SendInv(node, "block", [][]byte{newBlock.Hash})
+	// }
+	// }
+
+	if len(n.TransactionsMemoryPool) > 0 {
+		n.MineTxs()
+	}
 }
