@@ -3,12 +3,11 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"log"
+	"time"
 
 	"github.com/erxonxi/coin/p2p"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/peerstore"
 
 	"github.com/spf13/cobra"
 
@@ -33,16 +32,16 @@ var nodeCmd = &cobra.Command{
 		ctx := context.Background()
 		peerChan := p2p.InitMDNS(node, group)
 		peer := <-peerChan // will block untill we discover a peer
-		fmt.Println("Found peer:", peer, ", connecting")
 
 		if err := node.Connect(ctx, peer); err != nil {
 			fmt.Println("Connection failed:", err)
 		}
 
-		log.Printf("NODE_ID: %s\n", node.ID())
-
 		for {
-			fmt.Println(node.Network().Peers())
+			time.Sleep(time.Second * 2)
+			for _, peer := range node.Network().Peers() {
+				node.Ping(peer)
+			}
 		}
 	},
 }
@@ -66,19 +65,4 @@ func makeNode(port int, done chan bool) *p2p.Node {
 	)
 
 	return p2p.NewNode(host, done)
-}
-
-func run(h1, h2 *p2p.Node, done <-chan bool) {
-	// connect peers
-	h1.Peerstore().AddAddrs(h2.ID(), h2.Addrs(), peerstore.PermanentAddrTTL)
-	h2.Peerstore().AddAddrs(h1.ID(), h1.Addrs(), peerstore.PermanentAddrTTL)
-
-	// send messages using the protocols
-	h1.Ping(h2.Host)
-	h2.Ping(h1.Host)
-
-	// block until all responses have been processed
-	for i := 0; i < 8; i++ {
-		<-done
-	}
 }
