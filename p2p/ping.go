@@ -14,8 +14,8 @@ import (
 )
 
 // pattern: /protocol-name/request-or-response-message/version
-const pingRequest = "/ping/pingreq/0.0.1"
-const pingResponse = "/ping/pingresp/0.0.1"
+const pingRequest = "/ping/request/0.0.1"
+const pingResponse = "/ping/response/0.0.1"
 
 // PingProtocol type
 type PingProtocol struct {
@@ -51,7 +51,7 @@ func (p *PingProtocol) onPingRequest(s network.Stream) {
 		return
 	}
 
-	log.Printf("%s: Received ping request from %s. Message: %s", s.Conn().LocalPeer(), s.Conn().RemotePeer(), data.Message)
+	log.Printf("%s:\nReceived ping request from %s.\nMessage:\n%s\n", s.Conn().LocalPeer(), s.Conn().RemotePeer(), data.Message)
 
 	valid := p.node.authenticateMessage(data, data.MessageData)
 
@@ -61,7 +61,7 @@ func (p *PingProtocol) onPingRequest(s network.Stream) {
 	}
 
 	// generate response message
-	log.Printf("%s: Sending ping response to %s. Message id: %s...", s.Conn().LocalPeer(), s.Conn().RemotePeer(), data.MessageData.Id)
+	log.Printf("%s:\nSending ping response to %s.\nMessage id: %s...\n", s.Conn().LocalPeer(), s.Conn().RemotePeer(), data.MessageData.Id)
 
 	resp := &pb.PingResponse{MessageData: p.node.NewMessageData(data.MessageData.Id, false),
 		Message: fmt.Sprintf("Ping response from %s", p.node.ID())}
@@ -80,7 +80,7 @@ func (p *PingProtocol) onPingRequest(s network.Stream) {
 	ok := p.node.sendProtoMessage(s.Conn().RemotePeer(), pingResponse, resp)
 
 	if ok {
-		log.Printf("%s: Ping response to %s sent.", s.Conn().LocalPeer().String(), s.Conn().RemotePeer().String())
+		log.Printf("%s:\nPing response to %s sent\n", s.Conn().LocalPeer().String(), s.Conn().RemotePeer().String())
 	}
 	p.done <- true
 }
@@ -120,7 +120,7 @@ func (p *PingProtocol) onPingResponse(s network.Stream) {
 		return
 	}
 
-	log.Printf("%s: Received ping response from %s. Message id:%s. Message: %s.", s.Conn().LocalPeer(), s.Conn().RemotePeer(), data.MessageData.Id, data.Message)
+	log.Printf("%s:\nReceived ping response from %s.\nMessage id:%s.\nMessage:\n%s.\n", s.Conn().LocalPeer(), s.Conn().RemotePeer(), data.MessageData.Id, data.Message)
 	p.done <- true
 }
 
