@@ -16,6 +16,13 @@ type Wallets struct {
 	Wallets map[string]*Wallet
 }
 
+func InitializeWallets(nodeId string) (*Wallets, error) {
+	wallets := Wallets{map[string]*Wallet{}}
+	err := wallets.LoadFile(nodeId)
+
+	return &wallets, err
+}
+
 func CreateWallets(nodeId string) (*Wallets, error) {
 	wallets := Wallets{}
 	wallets.Wallets = make(map[string]*Wallet)
